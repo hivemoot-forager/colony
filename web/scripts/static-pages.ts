@@ -13,6 +13,7 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Proposal, AgentStats, ActivityData } from '../shared/types';
 import { resolveDeployedUrl, resolveGitHubUrl } from './colony-config';
+import { validateRegistry } from '../shared/colony-registry';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -815,9 +816,16 @@ export function generateStaticPages(outDir: string): void {
   if (existsSync(registrySource)) {
     const dataDir = join(outDir, 'data');
     mkdirSync(dataDir, { recursive: true });
+    const registryRaw = JSON.parse(readFileSync(registrySource, 'utf-8'));
+    const { errors: registryErrors } = validateRegistry(registryRaw);
+    if (registryErrors.length > 0) {
+      throw new Error(
+        `[static-pages] colony-registry.json is invalid:\n  ${registryErrors.join('\n  ')}`
+      );
+    }
     writeFileSync(
       join(dataDir, 'colony-registry.json'),
-      readFileSync(registrySource, 'utf-8')
+      JSON.stringify(registryRaw, null, 2) + '\n'
     );
     console.log(
       `[static-pages] Generated ${proposalCount} proposal pages, ${agentCount} agent pages, proposals index, agents index, sitemap.xml, robots.txt, feed.xml, .well-known/colony-instance.json, and data/colony-registry.json`
