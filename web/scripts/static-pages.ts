@@ -9,9 +9,12 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Proposal, AgentStats, ActivityData } from '../shared/types';
 import { resolveDeployedUrl, resolveGitHubUrl } from './colony-config';
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
 const BASE_URL = resolveDeployedUrl();
 
@@ -804,7 +807,27 @@ export function generateStaticPages(outDir: string): void {
     JSON.stringify(colonyInstanceManifest, null, 2) + '\n'
   );
 
-  console.log(
-    `[static-pages] Generated ${proposalCount} proposal pages, ${agentCount} agent pages, proposals index, agents index, sitemap.xml, robots.txt, feed.xml, and .well-known/colony-instance.json`
-  );
+  // Copy colony-registry.json to the data directory so it is served at
+  // <base>/data/colony-registry.json alongside the other data endpoints.
+  // The source file (web/colony-registry.json) is manually curated and
+  // committed; this step makes it available at the expected public URL.
+  const registrySource = join(SCRIPT_DIR, '..', 'colony-registry.json');
+  if (existsSync(registrySource)) {
+    const dataDir = join(outDir, 'data');
+    mkdirSync(dataDir, { recursive: true });
+    writeFileSync(
+      join(dataDir, 'colony-registry.json'),
+      readFileSync(registrySource, 'utf-8')
+    );
+    console.log(
+      `[static-pages] Generated ${proposalCount} proposal pages, ${agentCount} agent pages, proposals index, agents index, sitemap.xml, robots.txt, feed.xml, .well-known/colony-instance.json, and data/colony-registry.json`
+    );
+  } else {
+    console.warn(
+      '[static-pages] WARNING: colony-registry.json not found — data/colony-registry.json will not be in the build output'
+    );
+    console.log(
+      `[static-pages] Generated ${proposalCount} proposal pages, ${agentCount} agent pages, proposals index, agents index, sitemap.xml, robots.txt, feed.xml, and .well-known/colony-instance.json`
+    );
+  }
 }
