@@ -51,9 +51,14 @@ The default window is **90 days** rolling, ending at the time `generate-benchmar
 is run. The `BENCHMARK_WINDOW_DAYS` environment variable overrides the window length.
 
 To capture PRs opened *before* the window start but merged *within* it (common
-for long-running feature branches), the script fetches up to 90 additional days
-of historical PR data beyond the window start. This prevents a systematic
-undercounting of long-lived PRs in the external cohort.
+for long-running feature branches), the script filters fetched PRs to the
+`windowDays + 90` day range. This retains long-lived PRs in the external cohort
+cycle time computation.
+
+Note: the script fetches a maximum of 200 closed PRs per external repo
+(recency-ordered). For repositories with more than 200 closed PRs within the
+`windowDays + 90` day range, metrics cover only the most recently created 200
+closed PRs.
 
 ---
 
@@ -62,7 +67,8 @@ undercounting of long-lived PRs in the external cohort.
 Comparison repos are selected to be directionally comparable to Colony, not
 identical. The default cohort satisfies all of the following:
 
-- **Active:** Merged PRs in the past 90 days
+- **Active:** ≥5 merged PRs in the default 90-day window (the minimum for a
+  non-null p50 cycle time)
 - **PR-centric workflow:** Uses pull requests as the primary merge gate (not
   direct pushes to main)
 - **Publicly accessible:** Full PR history available via the GitHub REST API
@@ -137,7 +143,7 @@ npm run generate-data           # pull latest Colony activity
 npm run generate-benchmark      # produce benchmark.json with default cohort
 
 # Custom cohort
-BENCHMARK_REPOSITORIES=vitejs/vite,prettier/prettier,sindresorhus/got \
+BENCHMARK_REPOSITORIES=vitejs/vite,prettier/prettier,sigstore/cosign \
   npm run generate-benchmark
 
 # Custom window

@@ -49,21 +49,27 @@ const GITHUB_API = 'https://api.github.com';
  * Default external comparison cohort.
  *
  * Selected criteria (see docs/BENCHMARK-METHODOLOGY.md):
- * - Active in a comparable time window
- * - 5–20 regular contributors
- * - Merge primarily through PRs (not direct commits)
+ * - Active: ≥5 merged PRs in the default 90-day window
+ * - Moderate size: comparable PR volume to Colony
+ * - PR-centric workflow: uses pull requests as the primary merge gate
  * - Publicly accessible GitHub repository
+ *
+ * To substitute or extend the cohort, set BENCHMARK_REPOSITORIES.
  */
-const DEFAULT_COHORT = ['vitejs/vite', 'prettier/prettier', 'sindresorhus/got'];
+const DEFAULT_COHORT = ['vitejs/vite', 'prettier/prettier', 'sigstore/cosign'];
 
 /**
- * Extra days added to the window look-back when paging GitHub PR results.
+ * Extra days added to the post-fetch filter cutoff.
  *
- * A PR opened *before* the window start may be merged *within* the window.
- * Fetching `WINDOW_DAYS + PAGING_LOOKBACK_BUFFER_DAYS` worth of PR history
- * ensures those long-lived PRs are captured in `mergedPrs` and in the cycle
- * time computation. Without this buffer, the endpoint's recency ordering
- * silently drops PRs whose `createdAt` falls before the look-back cutoff.
+ * After fetching up to 200 closed PRs (recency-ordered) from GitHub, the
+ * results are filtered to PRs created on or after
+ * `currentEnd - (windowDays + PAGING_LOOKBACK_BUFFER_DAYS)`. This retains
+ * PRs opened *before* the window start but merged *within* it (common for
+ * long-running feature branches).
+ *
+ * Note: this is a post-fetch filter, not parameterized API paging. For repos
+ * with more than 200 closed PRs within the extended range, metrics cover only
+ * the most recently created 200 closed PRs.
  */
 const PAGING_LOOKBACK_BUFFER_DAYS = 90;
 
@@ -369,9 +375,21 @@ export async function buildBenchmarkArtifact(
         (pr) => new Date(pr.created_at).getTime() >= fetchStart.getTime()
       );
 
-      cohort.push(
-        computeRepoMetrics(recentPrs, repoSlug, windowStart, currentEnd)
+      const metrics = computeRepoMetrics(
+        recentPrs,
+        repoSlug,
+        windowStart,
+        currentEnd
       );
+      if (metrics.prCycleTimeP50Hours === null) {
+        console.warn(
+          `  Warning: ${repoSlug} has fewer than 5 merged PRs in the ` +
+            `${windowDays}-day window (found ${metrics.mergedPrCount}). ` +
+            `prCycleTimeP50Hours will be null. Consider replacing this repo ` +
+            `in the cohort or using a longer BENCHMARK_WINDOW_DAYS.`
+        );
+      }
+      cohort.push(metrics);
     } catch (err) {
       console.warn(
         `  Warning: failed to fetch ${repoSlug}: ${String(err)}. Skipping.`
