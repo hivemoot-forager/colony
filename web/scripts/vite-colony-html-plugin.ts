@@ -75,7 +75,8 @@ export function transformHtml(html: string, config: ColonyConfig): string {
     .replace(/__COLONY_JSONLD_PUBLISHER_URL__/g, config.githubUrl)
     .replace(/__COLONY_PAGE_TITLE__/g, pageTitle)
     .replace(/__COLONY_SITE_TITLE__/g, config.siteTitle)
-    .replace(/__COLONY_NOSCRIPT_GITHUB_URL__/g, config.githubUrl);
+    .replace(/__COLONY_NOSCRIPT_GITHUB_URL__/g, config.githubUrl)
+    .replace(/__COLONY_ATOM_FEED_URL__/g, `${config.siteUrl}/feed.xml`);
 }
 
 /**
