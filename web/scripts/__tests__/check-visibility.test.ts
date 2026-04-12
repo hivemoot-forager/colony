@@ -8,6 +8,7 @@ import {
   resolveDeployedPageUrl,
   resolveRepositoryHomepage,
   resolveVisibilityRepository,
+  resolveVisibilityToken,
   resolveVisibilityUserAgent,
   type CheckResult,
   type VisibilityReport,
@@ -32,6 +33,31 @@ describe('resolveVisibilityUserAgent', () => {
         VISIBILITY_USER_AGENT: '   ',
       })
     ).toBe('colony-visibility-check');
+  });
+});
+
+describe('resolveVisibilityToken', () => {
+  it('returns undefined when neither GITHUB_TOKEN nor GH_TOKEN is set', () => {
+    expect(resolveVisibilityToken({})).toBeUndefined();
+  });
+
+  it('returns GITHUB_TOKEN when only GITHUB_TOKEN is set', () => {
+    expect(resolveVisibilityToken({ GITHUB_TOKEN: 'gha-token' })).toBe(
+      'gha-token'
+    );
+  });
+
+  it('returns GH_TOKEN when only GH_TOKEN is set', () => {
+    expect(resolveVisibilityToken({ GH_TOKEN: 'cli-token' })).toBe('cli-token');
+  });
+
+  it('GITHUB_TOKEN wins over GH_TOKEN when both are set', () => {
+    expect(
+      resolveVisibilityToken({
+        GITHUB_TOKEN: 'gha-token',
+        GH_TOKEN: 'cli-token',
+      })
+    ).toBe('gha-token');
   });
 });
 
