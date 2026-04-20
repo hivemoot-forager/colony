@@ -31,6 +31,7 @@ describe('transformHtml', () => {
   <head>
     <link rel="canonical" href="__COLONY_CANONICAL_URL__" />
     <link rel="manifest" href="__COLONY_MANIFEST_HREF__" />
+    <link rel="alternate" type="application/atom+xml" title="Colony Governance Feed" href="__COLONY_ATOM_FEED_URL__" />
     <meta name="description" content="__COLONY_META_DESCRIPTION__" />
     <meta property="og:url" content="__COLONY_OG_URL__" />
     <meta property="og:title" content="__COLONY_OG_TITLE__" />
@@ -79,6 +80,9 @@ describe('transformHtml', () => {
     expect(result).toContain('<title>Colony | Hivemoot</title>');
     expect(result).toContain('<h1>Colony</h1>');
     expect(result).toContain('href="https://github.com/hivemoot/colony"');
+    expect(result).toContain(
+      'href="https://hivemoot.github.io/colony/feed.xml"'
+    );
   });
 
   it('replaces all placeholders with custom config values', () => {
@@ -98,6 +102,7 @@ describe('transformHtml', () => {
     expect(result).toContain('<title>Swarm | Acme</title>');
     expect(result).toContain('<h1>Swarm</h1>');
     expect(result).toContain('href="https://github.com/acme/swarm"');
+    expect(result).toContain('href="https://acme.github.io/swarm/feed.xml"');
   });
 
   it('leaves no unreplaced placeholder tokens', () => {

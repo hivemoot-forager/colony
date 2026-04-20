@@ -441,6 +441,17 @@ async function runChecks(): Promise<CheckResult[]> {
     ok: deployedJsonLd,
   });
 
+  const homepageAtomPresent = hasAtomAutodiscoveryLink(deployedRootHtml);
+  results.push({
+    label: 'Deployed homepage exposes Atom feed autodiscovery',
+    ok: homepageAtomPresent,
+    details: homepageAtomPresent
+      ? 'Found <link rel="alternate" type="application/atom+xml"> on homepage'
+      : rootRes?.status === 200
+        ? 'Missing <link rel="alternate" type="application/atom+xml"> on homepage'
+        : `Could not fetch homepage: ${rootRes?.status ?? 'no response'}`,
+  });
+
   const canonicalUrl = extractTagAttributeValue(
     deployedRootHtml,
     'link',
