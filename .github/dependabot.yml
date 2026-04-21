@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # npm security updates are handled separately — Dependabot security alerts
+  # are a distinct GitHub feature from version updates in this file.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
