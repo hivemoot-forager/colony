@@ -22,7 +22,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   validateRegistry,
@@ -301,7 +301,13 @@ export async function main(
   }
 }
 
-main().catch((err: unknown) => {
-  console.error('Fatal error:', err);
-  process.exit(1);
-});
+function isDirectExecution(): boolean {
+  return resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+}
+
+if (isDirectExecution()) {
+  main().catch((err: unknown) => {
+    console.error('Fatal error:', err);
+    process.exit(1);
+  });
+}
